@@ -1,6 +1,6 @@
 allows you to use a public API Perplexity.ai bypassing Cloudflare
 
-```
+```python
 import asyncio
 
 from perplexity_free_api_client import PerplexityFreeAPIClient

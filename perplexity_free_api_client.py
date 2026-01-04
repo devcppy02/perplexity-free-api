@@ -5,6 +5,7 @@ from typing import List, Literal, Optional
 
 from curl_cffi.requests import AsyncSession
 from curl_cffi.requests.impersonate import BrowserTypeLiteral
+from curl_cffi.requests.cookies import CookieTypes
 
 
 class PerplexityFreeAPIClient:
@@ -38,6 +39,7 @@ class PerplexityFreeAPIClient:
 
     def __init__(
         self,
+        cookies: Optional[CookieTypes] = None,
         timezone: str = "America/New_York",
         language: str = "en-US",
         version: str = "2.18",
@@ -53,14 +55,14 @@ class PerplexityFreeAPIClient:
             "Sec-Fetch-Site": "same-origin",
             "Content-Type": "application/json",
         }
-        self.cookies = None
+        self.cookies = cookies
 
         self.frontend_uuid = str(uuid.uuid4())
         self.timezone = timezone
         self.language = language
         self.version = version
 
-    async def init(self):
+    async def get_no_acc_cookies(self):
         response = await self.session.get(
             "https://www.perplexity.ai/", headers=self.headers
         )
@@ -70,8 +72,9 @@ class PerplexityFreeAPIClient:
     async def ask(
         self,
         message: str,
-        search_focus: Literal["internet", "writing", "scholar", "social"] = "internet",
-        sources: Optional[List[str]] = None,
+        search_focus: Literal["internet", "writing"] = "internet",
+        sources: Optional[List[Literal["web", "scholar", "social", "edgar"]]] = ["web"],
+        model_preference: Optional[Literal["turbo", "pplx_pro", "experimental", "gpt52", "gpt52_thinking", "gemini30pro", "gemini30flash", "gemini30flash_high", "grok41nonreasoning", "grok41reasoning", "kimik2thinking", "claude45sonnet", "claude45sonnetthinking"]] = "turbo",
         context_uuid: Optional[str] = None,
     ):
         """
@@ -82,12 +85,8 @@ class PerplexityFreeAPIClient:
         :param sources: List of sources
         :param context_uuid: Chat ID, If None, a new chat will be created
         """
-
-        if sources is None:
-            if search_focus == "writing":
-                sources = []
-            else:
-                sources = ["web"]
+        if self.cookies is None:
+            await self.get_no_acc_cookies()
 
         current_context_uuid = context_uuid if context_uuid else str(uuid.uuid4())
 
@@ -109,7 +108,7 @@ class PerplexityFreeAPIClient:
                 "local_search_enabled": False,
                 "mentions": [],
                 "mode": "concise",
-                "model_preference": "turbo",
+                "model_preference": model_preference,
                 "override_no_search": False,
                 "prompt_source": "user",
                 "query_source": "home",
@@ -170,4 +169,4 @@ class PerplexityFreeAPIClient:
             except json.JSONDecodeError:
                 pass
 
-        return final_answer
+        return current_context_uuid, final_answer

@@ -7,10 +7,8 @@ from perplexity_free_api_client import PerplexityFreeAPIClient
 
 
 async def main():
-    client = PerplexityFreeAPIClient()
-    await client.init()
-
-    print(await client.ask(message="Tell me about yourself"))
+    client = PerplexityFreeAPIClient(cookies=...)
+    print(await client.ask(message="Tell me about yourself", model_preference="gpt52"))
 
 
 if __name__ == "__main__":
